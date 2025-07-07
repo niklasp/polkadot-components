@@ -18,6 +18,11 @@
         {
           "path": "registry/new-york/blocks/block-number/hooks/use-block-number.ts",
           "type": "registry:hook"
+        },
+        {
+          "path": "registry/new-york/providers/polkadot-provider.tsx",
+          "type": "registry:file",
+          "target": "providers/polkadot-provider.tsx"
         }
       ]
     },

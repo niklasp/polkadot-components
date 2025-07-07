@@ -20,6 +20,12 @@
       "path": "registry/new-york/blocks/block-number/hooks/use-block-number.ts",
       "content": "\"use client\";\nimport { useQuery } from \"@tanstack/react-query\";\n\nexport function useBlockNumber() {\n  const blockNumber = useQuery({\n    queryKey: [\"blockNumber\"],\n    queryFn: getBlockNumber,\n  });\n\n  return blockNumber;\n}\n\nexport async function getBlockNumber() {\n  return 1234567890;\n}\n",
       "type": "registry:hook"
+    },
+    {
+      "path": "registry/new-york/providers/polkadot-provider.tsx",
+      "content": "\"use client\";\n\nimport { QueryClient, QueryClientProvider } from \"@tanstack/react-query\";\n\nconst queryClient = new QueryClient();\n\nexport function PolkadotProvider({ children }: { children: React.ReactNode }) {\n  return (\n    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>\n  );\n}\n",
+      "type": "registry:file",
+      "target": "providers/polkadot-provider.tsx"
     }
   ]
 }

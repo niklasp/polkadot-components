@@ -2,7 +2,7 @@
 import { useBlockNumber } from "../hooks/use-block-number";
 
 export function BlockNumber() {
-  const { data: blockNumber } = useBlockNumber();
+  const blockNumber = useBlockNumber();
 
-  return <div>{blockNumber}</div>;
+  return <div>{blockNumber?.toString()}</div>;
 }
