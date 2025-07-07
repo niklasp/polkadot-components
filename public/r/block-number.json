@@ -1,0 +1,25 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "block-number",
+  "type": "registry:component",
+  "title": "Block Number",
+  "description": "A simple block number component",
+  "dependencies": [
+    "@tanstack/react-query"
+  ],
+  "registryDependencies": [
+    "button"
+  ],
+  "files": [
+    {
+      "path": "registry/new-york/blocks/block-number/components/block-number.tsx",
+      "content": "\"use client\";\nimport { useBlockNumber } from \"../hooks/use-block-number\";\n\nexport function BlockNumber() {\n  const { data: blockNumber } = useBlockNumber();\n\n  return <div>{blockNumber}</div>;\n}\n",
+      "type": "registry:component"
+    },
+    {
+      "path": "registry/new-york/blocks/block-number/hooks/use-block-number.ts",
+      "content": "\"use client\";\nimport { useQuery } from \"@tanstack/react-query\";\n\nexport function useBlockNumber() {\n  const blockNumber = useQuery({\n    queryKey: [\"blockNumber\"],\n    queryFn: getBlockNumber,\n  });\n\n  return blockNumber;\n}\n\nexport async function getBlockNumber() {\n  return 1234567890;\n}\n",
+      "type": "registry:hook"
+    }
+  ]
+}
