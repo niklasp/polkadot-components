@@ -13,17 +13,17 @@
   "files": [
     {
       "path": "registry/new-york/blocks/block-number/components/block-number.tsx",
-      "content": "\"use client\";\nimport { useBlockNumber } from \"../hooks/use-block-number\";\n\nexport function BlockNumber() {\n  const { data: blockNumber } = useBlockNumber();\n\n  return <div>{blockNumber}</div>;\n}\n",
+      "content": "\"use client\";\nimport { useBlockNumber } from \"../hooks/use-block-number\";\n\nexport function BlockNumber() {\n  const blockNumber = useBlockNumber();\n\n  return <div>{blockNumber?.toString()}</div>;\n}\n",
       "type": "registry:component"
     },
     {
       "path": "registry/new-york/blocks/block-number/hooks/use-block-number.ts",
-      "content": "\"use client\";\nimport { useQuery } from \"@tanstack/react-query\";\n\nexport function useBlockNumber() {\n  const blockNumber = useQuery({\n    queryKey: [\"blockNumber\"],\n    queryFn: getBlockNumber,\n  });\n\n  return blockNumber;\n}\n\nexport async function getBlockNumber() {\n  return 1234567890;\n}\n",
+      "content": "\"use client\";\nimport { usePolkadot } from \"@/registry/new-york/providers/polkadot-provider\";\nimport { useEffect, useState } from \"react\";\n\nexport function useBlockNumber() {\n  const { api } = usePolkadot();\n  const [blockNumber, setBlockNumber] = useState<number | null>(null);\n\n  useEffect(() => {\n    const subscription = api?.query.System.Number.watchValue(\"best\").subscribe(\n      (value) => {\n        setBlockNumber(value);\n      }\n    );\n\n    return () => {\n      subscription?.unsubscribe();\n    };\n  }, [api]);\n\n  return blockNumber;\n}\n",
       "type": "registry:hook"
     },
     {
       "path": "registry/new-york/providers/polkadot-provider.tsx",
-      "content": "\"use client\";\n\nimport { QueryClient, QueryClientProvider } from \"@tanstack/react-query\";\n\nconst queryClient = new QueryClient();\n\nexport function PolkadotProvider({ children }: { children: React.ReactNode }) {\n  return (\n    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>\n  );\n}\n",
+      "content": "\"use client\";\n\nimport { paseo_asset_hub } from \"@polkadot-api/descriptors\";\nimport { createClient, TypedApi } from \"polkadot-api\";\nimport { getWsProvider } from \"polkadot-api/ws-provider/web\";\nimport { withPolkadotSdkCompat } from \"polkadot-api/polkadot-sdk-compat\";\nimport { createContext, useContext } from \"react\";\n\nconst client = createClient(\n  withPolkadotSdkCompat(getWsProvider(\"wss://sys.ibp.network/asset-hub-paseo\"))\n);\n\nexport interface PolkadotContextType {\n  api: TypedApi<typeof paseo_asset_hub> | null;\n}\n\nexport const PolkadotContext = createContext<PolkadotContextType>({\n  api: null,\n});\n\nexport function PolkadotProvider({ children }: { children: React.ReactNode }) {\n  const api = client.getTypedApi(paseo_asset_hub);\n\n  return (\n    <PolkadotContext.Provider value={{ api }}>\n      {children}\n    </PolkadotContext.Provider>\n  );\n}\n\nexport function usePolkadot() {\n  const context = useContext(PolkadotContext);\n  if (!context) {\n    throw new Error(\"usePolkadot must be used within a PolkadotProvider\");\n  }\n  return context;\n}\n",
       "type": "registry:file",
       "target": "providers/polkadot-provider.tsx"
     }
