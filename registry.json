@@ -4,6 +4,24 @@
   "homepage": "https://acme.com",
   "items": [
     {
+      "name": "block-number",
+      "type": "registry:component",
+      "title": "Block Number",
+      "description": "A simple block number component",
+      "dependencies": ["@tanstack/react-query"],
+      "registryDependencies": ["button"],
+      "files": [
+        {
+          "path": "registry/new-york/blocks/block-number/components/block-number.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/new-york/blocks/block-number/hooks/use-block-number.ts",
+          "type": "registry:hook"
+        }
+      ]
+    },
+    {
       "name": "hello-world",
       "type": "registry:component",
       "title": "Hello World",
