@@ -150,7 +150,7 @@ async function adaptProviderToChain(chainName, structure) {
 
 // Setup polkadot-api with proper chain detection
 async function setupPolkadotApi(componentInfo, structure, isDev = false) {
-  console.log(chalk.blue("🔗 Setting up Polkadot API..."));
+  console.log(chalk.cyan("Setting up Polkadot API..."));
 
   // Check for existing papi configuration
   const existingChains = await checkExistingPapiConfig();
@@ -196,9 +196,7 @@ async function setupPolkadotApi(componentInfo, structure, isDev = false) {
     });
     spinner.succeed(`${chainDisplayName} chain metadata and types generated`);
 
-    console.log(
-      chalk.blue(`📝 Adapting provider to use ${chainDisplayName}...`)
-    );
+    console.log(chalk.cyan(`Adapting provider to use ${chainDisplayName}...`));
     await adaptProviderToChain(defaultChain, structure);
   } catch (error) {
     spinner.fail("Failed to setup Polkadot API");
@@ -208,7 +206,7 @@ async function setupPolkadotApi(componentInfo, structure, isDev = false) {
 }
 
 async function installComponent(componentName, isDev = false) {
-  console.log(chalk.blue(`🚀 Installing ${componentName} component...`));
+  console.log(chalk.cyan(`Installing ${componentName} component...`));
 
   try {
     // Validate project structure
@@ -221,8 +219,8 @@ async function installComponent(componentName, isDev = false) {
     const tailwindVersion = await getTailwindVersion();
     const shadcnCmd = tailwindVersion === 4 ? "shadcn@canary" : "shadcn@latest";
 
-    console.log(chalk.blue(`Detected Tailwind CSS v${tailwindVersion}`));
-    console.log(chalk.blue(`Using ${shadcnCmd} for compatibility`));
+    console.log(chalk.cyan(`Detected Tailwind CSS v${tailwindVersion}`));
+    console.log(chalk.cyan(`Using ${shadcnCmd} for compatibility`));
 
     // Install component with shadcn
     const spinner = ora("Installing component with shadcn...").start();
@@ -253,7 +251,7 @@ async function installComponent(componentName, isDev = false) {
     );
 
     if (needsSetup) {
-      console.log(chalk.yellow("\n📝 Next steps:"));
+      console.log(chalk.cyan("\nNext steps:"));
       console.log(chalk.gray("1. Wrap your app with the PolkadotProvider:"));
       console.log(chalk.gray("   // In your app/layout.tsx or pages/_app.tsx"));
       console.log(
@@ -262,9 +260,7 @@ async function installComponent(componentName, isDev = false) {
         )
       );
       console.log(
-        chalk.gray(
-          "   // Wrap your app: <PolkadotProvider>{children}</PolkadotProvider>"
-        )
+        chalk.gray("   <PolkadotProvider>{children}</PolkadotProvider>")
       );
       console.log(chalk.gray(""));
       console.log(chalk.gray("2. Import and use the component in your pages:"));
@@ -276,14 +272,6 @@ async function installComponent(componentName, isDev = false) {
             .join("")} } from '@/components/${componentName}';`
         )
       );
-      console.log(
-        chalk.gray(
-          `   // Use: <${componentName
-            .split("-")
-            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-            .join("")} />`
-        )
-      );
       console.log(chalk.gray(""));
       console.log(
         chalk.gray(
@@ -291,7 +279,7 @@ async function installComponent(componentName, isDev = false) {
         )
       );
     } else {
-      console.log(chalk.yellow("\n📝 Next steps:"));
+      console.log(chalk.cyan("\nNext steps:"));
       console.log(chalk.gray("1. Import and use the component in your pages:"));
       console.log(
         chalk.gray(
@@ -299,14 +287,6 @@ async function installComponent(componentName, isDev = false) {
             .split("-")
             .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
             .join("")} } from '@/components/${componentName}';`
-        )
-      );
-      console.log(
-        chalk.gray(
-          `   // Use: <${componentName
-            .split("-")
-            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-            .join("")} />`
         )
       );
     }
@@ -344,7 +324,7 @@ async function listComponents() {
     const registry = await response.json();
     spinner.succeed("Components loaded");
 
-    console.log(chalk.green("\n📦 Available Polkadot UI Components:\n"));
+    console.log(chalk.green("\nAvailable Polkadot UI Components:\n"));
 
     // Handle the actual registry format with items array
     const items = registry.items || [];
@@ -359,19 +339,19 @@ async function listComponents() {
     const regularComponents = items.filter((item) => !item.requiresPolkadotApi);
 
     if (polkadotComponents.length > 0) {
-      console.log(chalk.blue("Polkadot Components:"));
+      console.log(chalk.cyan("Polkadot Components:"));
       polkadotComponents.forEach((item) => {
         const description = item.description || "No description available";
-        console.log(chalk.gray(`  • ${item.name} - ${description}`));
+        console.log(chalk.gray(`  * ${item.name} - ${description}`));
       });
       console.log();
     }
 
     if (regularComponents.length > 0) {
-      console.log(chalk.blue("Other Components:"));
+      console.log(chalk.cyan("Other Components:"));
       regularComponents.forEach((item) => {
         const description = item.description || "No description available";
-        console.log(chalk.gray(`  • ${item.name} - ${description}`));
+        console.log(chalk.gray(`  * ${item.name} - ${description}`));
       });
       console.log();
     }
@@ -405,9 +385,7 @@ program
   .action((options) => {
     if (options.dev) {
       REGISTRY_URL = "http://localhost:3000";
-      console.log(
-        chalk.blue("🚀 Using development registry at localhost:3000")
-      );
+      console.log(chalk.cyan("Using development registry at localhost:3000"));
     }
     listComponents();
   });
@@ -420,9 +398,7 @@ program
   .action((component, options) => {
     if (options.dev) {
       REGISTRY_URL = "http://localhost:3000";
-      console.log(
-        chalk.blue("🚀 Using development registry at localhost:3000")
-      );
+      console.log(chalk.cyan("Using development registry at localhost:3000"));
     }
     installComponent(component, options.dev);
   });
