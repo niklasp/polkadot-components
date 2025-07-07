@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "postinstall": "pnpm papi && pnpm registry:build",
+    "preinstall": "pnpm papi",
+    "postinstall": "pnpm registry:build",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
