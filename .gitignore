@@ -17,8 +17,6 @@
 /.next/
 /out/
 
-# papi
-.papi/
 
 # production
 /build
