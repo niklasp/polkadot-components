@@ -32,13 +32,76 @@ async function getTailwindVersion() {
 // Detect project type and structure
 async function detectProjectStructure() {
   try {
-    const packageJson = JSON.parse(await fs.readFile("package.json", "utf-8"));
+    // Check if package.json exists
+    let packageJson;
+    try {
+      packageJson = JSON.parse(await fs.readFile("package.json", "utf-8"));
+    } catch (error) {
+      if (error.code === "ENOENT") {
+        // package.json doesn't exist - provide helpful guidance
+        console.log(
+          chalk.red("\n✖ No package.json found in current directory")
+        );
+        console.log(
+          chalk.cyan(
+            "\nTo use polkadot-ui, you need a React or Next.js project."
+          )
+        );
+        console.log(chalk.cyan("Here's how to create one:\n"));
+
+        console.log(
+          chalk.yellow("📦 Create a new Next.js project (recommended):")
+        );
+        console.log(chalk.gray("  npx create-next-app@latest my-polkadot-app"));
+        console.log(chalk.gray("  cd my-polkadot-app\n"));
+
+        console.log(chalk.yellow("📦 Or create a new Vite + React project:"));
+        console.log(
+          chalk.gray(
+            "  npm create vite@latest my-polkadot-app -- --template react-ts"
+          )
+        );
+        console.log(chalk.gray("  cd my-polkadot-app"));
+        console.log(chalk.gray("  npm install\n"));
+
+        console.log(
+          chalk.yellow("📦 Or create a new Create React App project:")
+        );
+        console.log(
+          chalk.gray(
+            "  npx create-react-app my-polkadot-app --template typescript"
+          )
+        );
+        console.log(chalk.gray("  cd my-polkadot-app\n"));
+
+        console.log(
+          chalk.cyan(
+            "Then run polkadot-ui commands from inside your project directory."
+          )
+        );
+
+        throw new Error("No React/Next.js project found");
+      }
+      throw error;
+    }
 
     // Check if it's a React project
     const hasReact =
       packageJson.dependencies?.react || packageJson.devDependencies?.react;
     if (!hasReact) {
-      throw new Error("This doesn't appear to be a React project");
+      console.log(chalk.red("\n✖ This doesn't appear to be a React project"));
+      console.log(chalk.cyan("\npolkadot-ui requires a React-based project."));
+      console.log(chalk.cyan("Supported frameworks:"));
+      console.log(chalk.gray("  • Next.js"));
+      console.log(chalk.gray("  • Vite + React"));
+      console.log(chalk.gray("  • Create React App\n"));
+
+      console.log(chalk.yellow("To create a new React project:"));
+      console.log(chalk.gray("  npx create-next-app@latest my-polkadot-app"));
+      console.log(chalk.gray("  cd my-polkadot-app"));
+      console.log(chalk.gray("  polkadot-ui add <component-name>\n"));
+
+      throw new Error("Not a React project");
     }
 
     // Detect project type
@@ -94,8 +157,17 @@ async function validateProject() {
     spinner.succeed("Project structure validated");
     return structure;
   } catch (error) {
-    spinner.fail(`Project validation failed: ${error.message}`);
-    throw error;
+    spinner.stop(); // Stop spinner without showing failure message
+
+    // Don't repeat the error message if we already provided helpful guidance
+    if (
+      !error.message.includes("No React/Next.js project found") &&
+      !error.message.includes("Not a React project")
+    ) {
+      console.log(chalk.red(`\n✖ ${error.message}`));
+    }
+
+    process.exit(1);
   }
 }
 
@@ -114,7 +186,7 @@ async function checkExistingPapiConfig() {
 
 async function updatePolkadotConfig(chainName, structure) {
   try {
-    const configPath = `${structure.registryDir}/lib/polkadot-config.ts`;
+    const configPath = "polkadot-config.ts"; // Config file is installed at project root
     const configExists = await fs
       .access(configPath)
       .then(() => true)
@@ -175,6 +247,7 @@ async function updatePolkadotConfig(chainName, structure) {
           asset_hub_polkadot: "wss://polkadot-asset-hub-rpc.polkadot.io",
           asset_hub_kusama: "wss://kusama-asset-hub-rpc.polkadot.io",
           paseo_asset_hub: "wss://sys.ibp.network/asset-hub-paseo",
+          paseo: "wss://sys.ibp.network/paseo",
         };
 
         const endpoint =
@@ -200,67 +273,109 @@ async function updatePolkadotConfig(chainName, structure) {
   }
 }
 
-// Setup polkadot-api with proper chain detection
-async function setupPolkadotApi(componentInfo, structure, isDev = false) {
-  console.log(chalk.cyan("Setting up Polkadot API..."));
+// Parse polkadot-config.ts to extract referenced chains
+async function parseConfigChains() {
+  try {
+    const configPath = "polkadot-config.ts";
+    const configExists = await fs
+      .access(configPath)
+      .then(() => true)
+      .catch(() => false);
 
-  // Check for existing papi configuration
-  const existingChains = await checkExistingPapiConfig();
+    if (!configExists) {
+      return [];
+    }
 
-  if (existingChains) {
-    console.log(
-      chalk.green(
-        `✔ Found existing Polkadot chains: ${existingChains.join(", ")}`
-      )
+    const content = await fs.readFile(configPath, "utf-8");
+
+    // Extract chains from the import statement
+    const importMatch = content.match(
+      /import\s*{\s*([^}]+)\s*}\s*from\s*["']@polkadot-api\/descriptors["']/
     );
-    console.log(chalk.green("✔ Reusing existing Polkadot API configuration"));
+    if (importMatch) {
+      return importMatch[1]
+        .split(",")
+        .map((chain) => chain.trim())
+        .filter((chain) => chain.length > 0);
+    }
 
-    // Still update the config to ensure proper chain configuration
-    const defaultChain = isDev ? "paseo_asset_hub" : "polkadot";
-    console.log(chalk.cyan(`Updating chain configuration...`));
-    await updatePolkadotConfig(defaultChain, structure);
-
-    return true; // Return true to indicate setup exists
+    return [];
+  } catch (error) {
+    console.error(chalk.yellow(`⚠ Failed to parse config: ${error.message}`));
+    return [];
   }
+}
 
-  // Choose default chain based on environment
-  const defaultChain = isDev ? "paseo_asset_hub" : "polkadot";
-  const chainDisplayName = isDev ? "Paseo Asset Hub" : "Polkadot";
-
-  const spinner = ora(`Adding ${chainDisplayName} chain metadata...`).start();
+async function installMissingChains(chains) {
+  const chainDisplayName =
+    chains.length > 1 ? `${chains.length} chains` : chains[0];
+  const spinner = ora(`Adding ${chainDisplayName} metadata...`).start();
 
   try {
-    if (isDev) {
-      // Add Paseo Asset Hub for development
-      await execa(
-        "pnpm",
-        ["papi", "add", "paseo_asset_hub", "-n", "paseo_asset_hub"],
-        {
-          stdio: "pipe",
-        }
-      );
-    } else {
-      // Add Polkadot mainnet for production
-      await execa("pnpm", ["papi", "add", "polkadot", "-n", "polkadot"], {
+    // Add each chain
+    for (const chain of chains) {
+      spinner.text = `Adding ${chain} metadata...`;
+      await execa("pnpm", ["papi", "add", chain, "-n", chain], {
         stdio: "pipe",
       });
     }
 
     spinner.text = "Generating Polkadot API types...";
 
-    // Generate types
+    // Generate types for all chains
     await execa("pnpm", ["papi"], {
       stdio: "pipe",
     });
-    spinner.succeed(`${chainDisplayName} chain metadata and types generated`);
 
-    console.log(chalk.cyan(`Updating config for ${chainDisplayName}...`));
-    await updatePolkadotConfig(defaultChain, structure);
+    spinner.succeed(`${chainDisplayName} metadata and types generated`);
   } catch (error) {
-    spinner.fail("Failed to setup Polkadot API");
+    spinner.fail("Failed to install chains");
     console.error(chalk.red("Error:"), error.message);
     throw error;
   }
+}
+
+// Setup polkadot-api with proper chain detection
+async function setupPolkadotApi(componentInfo, structure, isDev = false) {
+  console.log(chalk.cyan("Setting up Polkadot API..."));
+
+  // First, check what chains are referenced in existing config
+  const configChains = await parseConfigChains();
+  const existingPapiChains = await checkExistingPapiConfig();
+
+  // Determine what chains we need
+  const defaultChains = isDev ? ["paseo_asset_hub", "paseo"] : ["polkadot"];
+  const requiredChains = [...new Set([...configChains, ...defaultChains])]; // Remove duplicates
+
+  console.log(chalk.cyan(`Required chains: ${requiredChains.join(", ")}`));
+
+  if (existingPapiChains && existingPapiChains.length > 0) {
+    console.log(
+      chalk.green(
+        `✔ Found existing Polkadot chains: ${existingPapiChains.join(", ")}`
+      )
+    );
+
+    // Check if we need to add any missing chains
+    const missingChains = requiredChains.filter(
+      (chain) => !existingPapiChains.includes(chain)
+    );
+
+    if (missingChains.length > 0) {
+      console.log(
+        chalk.cyan(`Adding missing chains: ${missingChains.join(", ")}`)
+      );
+      await installMissingChains(missingChains);
+    } else {
+      console.log(chalk.green("✔ All required chains are already installed"));
+    }
+
+    return true;
+  }
+
+  // No existing setup, install all required chains
+  console.log(chalk.cyan(`Installing chains: ${requiredChains.join(", ")}`));
+  await installMissingChains(requiredChains);
 }
 
 async function installComponent(componentName, isDev = false) {
@@ -349,7 +464,13 @@ async function installComponent(componentName, isDev = false) {
       );
     }
   } catch (error) {
-    console.error(chalk.red("Failed to install component:"), error.message);
+    // Error handling is done in validateProject(), just exit
+    if (
+      !error.message.includes("No React/Next.js project found") &&
+      !error.message.includes("Not a React project")
+    ) {
+      console.error(chalk.red("Failed to install component:"), error.message);
+    }
     process.exit(1);
   }
 }

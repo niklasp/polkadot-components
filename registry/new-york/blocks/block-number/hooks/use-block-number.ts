@@ -3,12 +3,14 @@ import { usePolkadot } from "@/registry/new-york/providers/polkadot-provider";
 import { useEffect, useState } from "react";
 
 export function useBlockNumber() {
-  // Use the type-safe hook with chain parameter - only registered chains allowed!
+  // Use the new provider API without specifying a chain - it uses the currently active chain
   const {
     api,
     isLoading: apiLoading,
     error: apiError,
-  } = usePolkadot("paseo_asset_hub");
+    currentChain,
+    chainName,
+  } = usePolkadot();
   const [blockNumber, setBlockNumber] = useState<number | null>(null);
 
   useEffect(() => {
@@ -16,7 +18,7 @@ export function useBlockNumber() {
 
     // No type assertions needed - TypeScript knows the exact API structure!
     const subscription = api.query.System.Number.watchValue("best").subscribe(
-      (value) => {
+      (value: number) => {
         setBlockNumber(value);
       }
     );
@@ -30,5 +32,7 @@ export function useBlockNumber() {
     blockNumber,
     isLoading: apiLoading,
     error: apiError,
+    currentChain,
+    chainName,
   };
 }

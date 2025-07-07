@@ -1,14 +1,14 @@
 {
   "$schema": "https://ui.shadcn.com/schema/registry.json",
-  "name": "acme",
-  "homepage": "https://acme.com",
+  "name": "polkadot-components",
+  "homepage": "https://polkadot-components.com",
   "items": [
     {
       "name": "block-number",
       "type": "registry:component",
       "title": "Block Number",
       "description": "A simple block number component that displays the current block number from Polkadot Asset Hub. Requires polkadot-api setup.",
-      "dependencies": ["@tanstack/react-query", "polkadot-api"],
+      "dependencies": ["polkadot-api"],
       "requiresPolkadotApi": true,
       "registryDependencies": ["button"],
       "files": [
@@ -24,6 +24,11 @@
           "path": "registry/new-york/providers/polkadot-provider.tsx",
           "type": "registry:file",
           "target": "providers/polkadot-provider.tsx"
+        },
+        {
+          "path": "registry/new-york/polkadot-config.ts",
+          "type": "registry:file",
+          "target": "polkadot-config.ts"
         }
       ]
     },

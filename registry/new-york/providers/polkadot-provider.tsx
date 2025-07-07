@@ -11,86 +11,81 @@ import {
   isValidChainId,
   type ChainId,
   type ChainDescriptor,
-} from "@/registry/new-york/lib/polkadot-config";
+} from "@/registry/new-york/polkadot-config";
 
 // Type for the API based on configured chains
 type ConfiguredChainApi<T extends ChainId> = TypedApi<ChainDescriptor<T>>;
 
-// Union type for all possible APIs
-type PolkadotApi = {
+// Create a composite API type that includes all registered chains
+type CompositeApi = {
   [K in ChainId]: ConfiguredChainApi<K>;
-}[ChainId];
+};
 
-// Context type for each chain
-type ChainContextType<T extends ChainId> = {
-  api: ConfiguredChainApi<T> | null;
-  chainName: string | null;
+interface PolkadotContextValue {
+  // Current active chain and its API
+  currentChain: ChainId;
+  api: ConfiguredChainApi<ChainId> | null;
   isLoading: boolean;
   error: string | null;
-};
 
-// Global context for all chains
-type GlobalPolkadotContextType = {
-  [K in ChainId]: ChainContextType<K>;
-} & {
+  // All APIs for all registered chains
+  apis: Partial<CompositeApi>;
+
+  // Function to switch active chain (type-safe)
+  setApi: (chainId: ChainId) => void;
+
+  // Connection management
+  disconnect: () => void;
+  isConnected: (chainId: ChainId) => boolean;
+
+  // Chain information
+  chainName: string | null;
   availableChains: ChainId[];
-  switchChain: (chainId: ChainId) => void;
-};
+}
 
-// Create contexts for each chain
-const chainContexts = {} as {
-  [K in ChainId]: React.Context<ChainContextType<K>>;
-};
+const PolkadotContext = createContext<PolkadotContextValue | undefined>(
+  undefined
+);
 
-// Initialize contexts for all configured chains
-getChainIds().forEach((chainId) => {
-  chainContexts[chainId] = createContext<ChainContextType<typeof chainId>>({
-    api: null,
-    chainName: null,
-    isLoading: true,
-    error: null,
-  });
-});
+interface PolkadotProviderProps {
+  children: React.ReactNode;
+  isDev?: boolean;
+}
 
 export function PolkadotProvider({
   children,
   isDev = false,
-}: {
-  children: React.ReactNode;
-  isDev?: boolean;
-}) {
-  const [chainStates, setChainStates] = useState<{
-    [K in ChainId]: ChainContextType<K>;
-  }>(() => {
-    const initialState = {} as any;
-    getChainIds().forEach((chainId) => {
-      initialState[chainId] = {
-        api: null,
-        chainName: null,
-        isLoading: true,
-        error: null,
-      };
-    });
-    return initialState;
-  });
-
-  const [initializedChains, setInitializedChains] = useState<Set<ChainId>>(
-    new Set()
+}: PolkadotProviderProps) {
+  const [currentChain, setCurrentChain] = useState<ChainId>(
+    isDev ? polkadotConfig.devChain : polkadotConfig.defaultChain
+  );
+  const [apis, setApis] = useState<Partial<CompositeApi>>({});
+  const [clients, setClients] = useState<
+    Map<ChainId, ReturnType<typeof createClient>>
+  >(new Map());
+  const [loadingStates, setLoadingStates] = useState<Map<ChainId, boolean>>(
+    new Map()
+  );
+  const [errorStates, setErrorStates] = useState<Map<ChainId, string | null>>(
+    new Map()
   );
 
+  // Initialize the default chain on mount
+  useEffect(() => {
+    const defaultChain = isDev
+      ? polkadotConfig.devChain
+      : polkadotConfig.defaultChain;
+    initializeChain(defaultChain);
+  }, [isDev]);
+
   const initializeChain = async (chainId: ChainId) => {
-    if (initializedChains.has(chainId)) return;
+    // Don't initialize if already connected
+    if (apis[chainId]) return;
+
+    setLoadingStates((prev) => new Map(prev).set(chainId, true));
+    setErrorStates((prev) => new Map(prev).set(chainId, null));
 
     try {
-      setChainStates((prev) => ({
-        ...prev,
-        [chainId]: {
-          ...prev[chainId],
-          isLoading: true,
-          error: null,
-        },
-      }));
-
       const chainConfig = getChainConfig(chainId);
 
       console.log(
@@ -107,85 +102,91 @@ export function PolkadotProvider({
         chainConfig.descriptor
       ) as ConfiguredChainApi<typeof chainId>;
 
-      setChainStates((prev) => ({
-        ...prev,
-        [chainId]: {
-          api: typedApi,
-          chainName: chainConfig.displayName,
-          isLoading: false,
-          error: null,
-        },
-      }));
-
-      setInitializedChains((prev) => new Set([...prev, chainId]));
+      setClients((prev) => new Map(prev).set(chainId, client));
+      setApis((prev) => ({ ...prev, [chainId]: typedApi }));
 
       console.log(`Successfully connected to ${chainConfig.displayName}`);
-    } catch (error) {
-      console.error(`Failed to initialize ${chainId}:`, error);
-      setChainStates((prev) => ({
-        ...prev,
-        [chainId]: {
-          ...prev[chainId],
-          isLoading: false,
-          error: error instanceof Error ? error.message : "Unknown error",
-        },
-      }));
+    } catch (err) {
+      console.error(`Failed to initialize ${chainId}:`, err);
+      setErrorStates((prev) =>
+        new Map(prev).set(
+          chainId,
+          err instanceof Error
+            ? err.message
+            : "Failed to initialize Polkadot API"
+        )
+      );
+    } finally {
+      setLoadingStates((prev) => new Map(prev).set(chainId, false));
     }
   };
 
-  const switchChain = (chainId: ChainId) => {
+  const setApi = (chainId: ChainId) => {
     if (!isValidChainId(chainId)) {
       console.error(`Invalid chain ID: ${chainId}`);
       return;
     }
-    initializeChain(chainId);
+
+    setCurrentChain(chainId);
+    // Initialize the chain if not already connected
+    if (!apis[chainId]) {
+      initializeChain(chainId);
+    }
   };
 
-  useEffect(() => {
-    // Initialize the appropriate chain based on environment
+  const disconnect = () => {
+    clients.forEach((client) => client.destroy());
+    setClients(new Map());
+    setApis({});
+    setLoadingStates(new Map());
+    setErrorStates(new Map());
     const defaultChain = isDev
       ? polkadotConfig.devChain
       : polkadotConfig.defaultChain;
-    initializeChain(defaultChain);
-  }, [isDev]);
+    setCurrentChain(defaultChain);
+  };
 
-  // Create context providers for each chain
-  const contextProviders = getChainIds().reduce(
-    (providers, chainId) => {
-      const Context = chainContexts[chainId];
-      const chainState = chainStates[chainId];
+  const isConnected = (chainId: ChainId): boolean => {
+    return !!apis[chainId];
+  };
 
-      return (children: React.ReactNode) => (
-        <Context.Provider value={chainState}>
-          {providers(children)}
-        </Context.Provider>
-      );
-    },
-    (children: React.ReactNode) => <>{children}</>
+  const currentChainConfig = getChainConfig(currentChain);
+
+  const value: PolkadotContextValue = {
+    currentChain,
+    api: apis[currentChain] || null,
+    isLoading: loadingStates.get(currentChain) || false,
+    error: errorStates.get(currentChain) || null,
+    apis,
+    setApi,
+    disconnect,
+    isConnected,
+    chainName: currentChainConfig.displayName,
+    availableChains: getChainIds(),
+  };
+
+  return (
+    <PolkadotContext.Provider value={value}>
+      {children}
+    </PolkadotContext.Provider>
   );
-
-  return contextProviders(children);
 }
 
-// Type-safe hook for specific chain
-export function usePolkadot<T extends ChainId>(
-  chainId: T
-): ChainContextType<T> {
-  const context = useContext(chainContexts[chainId]);
-  if (!context) {
-    throw new Error(
-      `usePolkadot("${String(chainId)}") must be used within a PolkadotProvider`
-    );
+export function usePolkadot(): PolkadotContextValue {
+  const context = useContext(PolkadotContext);
+
+  if (context === undefined) {
+    throw new Error("usePolkadot must be used within a PolkadotProvider");
   }
+
   return context;
 }
 
 // Helper to get properly typed API (maintains backward compatibility)
-export function useTypedPolkadotApi(): PolkadotApi | null {
-  // Default to dev chain for backward compatibility
-  const { api } = usePolkadot(polkadotConfig.devChain);
+export function useTypedPolkadotApi(): ConfiguredChainApi<ChainId> | null {
+  const { api } = usePolkadot();
   return api;
 }
 
-// Type export for external use
-export type { ChainId, ConfiguredChainApi };
+// Type exports
+export type { ChainId, ConfiguredChainApi, CompositeApi };
