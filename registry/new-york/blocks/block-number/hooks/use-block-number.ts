@@ -3,11 +3,19 @@ import { usePolkadot } from "@/registry/new-york/providers/polkadot-provider";
 import { useEffect, useState } from "react";
 
 export function useBlockNumber() {
-  const { api } = usePolkadot();
+  // Use the type-safe hook with chain parameter - only registered chains allowed!
+  const {
+    api,
+    isLoading: apiLoading,
+    error: apiError,
+  } = usePolkadot("paseo_asset_hub");
   const [blockNumber, setBlockNumber] = useState<number | null>(null);
 
   useEffect(() => {
-    const subscription = api?.query.System.Number.watchValue("best").subscribe(
+    if (!api || apiLoading) return;
+
+    // No type assertions needed - TypeScript knows the exact API structure!
+    const subscription = api.query.System.Number.watchValue("best").subscribe(
       (value) => {
         setBlockNumber(value);
       }
@@ -16,7 +24,11 @@ export function useBlockNumber() {
     return () => {
       subscription?.unsubscribe();
     };
-  }, [api]);
+  }, [api, apiLoading]);
 
-  return blockNumber;
+  return {
+    blockNumber,
+    isLoading: apiLoading,
+    error: apiError,
+  };
 }

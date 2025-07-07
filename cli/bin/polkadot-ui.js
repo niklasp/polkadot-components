@@ -75,6 +75,7 @@ async function detectProjectStructure() {
       componentDir,
       hookDir: srcDir ? `${srcDir}/hooks` : "hooks",
       providerDir: srcDir ? `${srcDir}/providers` : "providers",
+      registryDir: "registry/new-york", // For registry template structure
       hasTypeScript: !!(
         packageJson.devDependencies?.typescript ||
         packageJson.dependencies?.typescript
@@ -111,40 +112,91 @@ async function checkExistingPapiConfig() {
   }
 }
 
-async function adaptProviderToChain(chainName, structure) {
+async function updatePolkadotConfig(chainName, structure) {
   try {
-    const providerPath = `${structure.providerDir}/polkadot-provider.tsx`;
-    const providerExists = await fs
-      .access(providerPath)
+    const configPath = `${structure.registryDir}/lib/polkadot-config.ts`;
+    const configExists = await fs
+      .access(configPath)
       .then(() => true)
       .catch(() => false);
 
-    if (!providerExists) {
-      console.log(
-        chalk.yellow("⚠ Polkadot provider not found, skipping adaptation")
-      );
+    if (!configExists) {
+      console.log(chalk.yellow("⚠ Polkadot config not found, skipping update"));
       return;
     }
 
-    let content = await fs.readFile(providerPath, "utf-8");
+    let content = await fs.readFile(configPath, "utf-8");
 
-    // Update the provider to prefer the specified chain
-    const preferChainRegex =
-      /const selectedChain = descriptorKeys\.includes\("([^"]+)"\)\s*\?\s*"([^"]+)"\s*:\s*descriptorKeys\[0\];/;
-    const newPreferChain = `const selectedChain = descriptorKeys.includes("${chainName}")
-          ? "${chainName}"
-          : descriptorKeys[0];`;
-
-    if (preferChainRegex.test(content)) {
-      content = content.replace(preferChainRegex, newPreferChain);
+    // Check if the chain is already imported
+    const importRegex = new RegExp(
+      `import.*${chainName}.*from.*@polkadot-api/descriptors`
+    );
+    if (importRegex.test(content)) {
+      console.log(chalk.gray(`Chain ${chainName} already imported`));
+      return;
     }
 
-    await fs.writeFile(providerPath, content);
+    // Add the import for the new chain
+    const descriptorImportRegex =
+      /import { ([^}]+) } from "@polkadot-api\/descriptors";/;
+    if (descriptorImportRegex.test(content)) {
+      content = content.replace(descriptorImportRegex, (match, imports) => {
+        const importList = imports.split(",").map((imp) => imp.trim());
+        if (!importList.includes(chainName)) {
+          importList.push(chainName);
+        }
+        return `import { ${importList.join(
+          ", "
+        )} } from "@polkadot-api/descriptors";`;
+      });
+    }
+
+    // Add the chain configuration if it doesn't exist
+    const chainConfigRegex = new RegExp(`${chainName}:\\s*{`);
+    if (!chainConfigRegex.test(content)) {
+      // Find the chains object and add the new chain
+      const chainsRegex = /(chains:\s*{\s*)/;
+      if (chainsRegex.test(content)) {
+        const isTestnet =
+          chainName.includes("testnet") ||
+          chainName.includes("paseo") ||
+          chainName.includes("rococo") ||
+          chainName.includes("westend");
+        const displayName = chainName
+          .replace(/_/g, " ")
+          .replace(/\b\w/g, (l) => l.toUpperCase());
+
+        // Get default endpoint for common chains
+        const endpoints = {
+          polkadot: "wss://polkadot-rpc.publicnode.com",
+          kusama: "wss://kusama-rpc.polkadot.io",
+          westend: "wss://westend-rpc.polkadot.io",
+          rococo: "wss://rococo-rpc.polkadot.io",
+          asset_hub_polkadot: "wss://polkadot-asset-hub-rpc.polkadot.io",
+          asset_hub_kusama: "wss://kusama-asset-hub-rpc.polkadot.io",
+          paseo_asset_hub: "wss://sys.ibp.network/asset-hub-paseo",
+        };
+
+        const endpoint =
+          endpoints[chainName] || `wss://${chainName}.polkadot.io`;
+
+        const chainConfig = `    ${chainName}: {
+      descriptor: ${chainName},
+      endpoint: "${endpoint}",
+      displayName: "${displayName}",
+      isTestnet: ${isTestnet},
+    },`;
+
+        content = content.replace(chainsRegex, `$1${chainConfig}\n`);
+      }
+    }
+
+    await fs.writeFile(configPath, content);
     console.log(
-      chalk.green(`✔ Provider adapted to prefer "${chainName}" chain`)
+      chalk.green(`✔ Updated Polkadot config with "${chainName}" chain`)
     );
   } catch (error) {
-    console.error(chalk.yellow(`⚠ Failed to adapt provider: ${error.message}`));
+    console.error(chalk.yellow(`⚠ Failed to update config: ${error.message}`));
   }
 }
 
@@ -162,6 +214,12 @@ async function setupPolkadotApi(componentInfo, structure, isDev = false) {
       )
     );
     console.log(chalk.green("✔ Reusing existing Polkadot API configuration"));
+
+    // Still update the config to ensure proper chain configuration
+    const defaultChain = isDev ? "paseo_asset_hub" : "polkadot";
+    console.log(chalk.cyan(`Updating chain configuration...`));
+    await updatePolkadotConfig(defaultChain, structure);
+
     return true; // Return true to indicate setup exists
   }
 
@@ -196,8 +254,8 @@ async function setupPolkadotApi(componentInfo, structure, isDev = false) {
     });
     spinner.succeed(`${chainDisplayName} chain metadata and types generated`);
 
-    console.log(chalk.cyan(`Adapting provider to use ${chainDisplayName}...`));
-    await adaptProviderToChain(defaultChain, structure);
+    console.log(chalk.cyan(`Updating config for ${chainDisplayName}...`));
+    await updatePolkadotConfig(defaultChain, structure);
   } catch (error) {
     spinner.fail("Failed to setup Polkadot API");
     console.error(chalk.red("Error:"), error.message);
