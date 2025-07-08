@@ -1,14 +1,15 @@
 {
   "$schema": "https://ui.shadcn.com/schema/registry.json",
-  "name": "acme",
-  "homepage": "https://acme.com",
+  "name": "polkadot-components",
+  "homepage": "https://polkadot-components.com",
   "items": [
     {
       "name": "block-number",
       "type": "registry:component",
       "title": "Block Number",
       "description": "A simple block number component that displays the current block number from Polkadot Asset Hub. Requires polkadot-api setup.",
-      "dependencies": ["@tanstack/react-query", "polkadot-api"],
+      "dependencies": ["polkadot-api"],
+      "requiresPolkadotApi": true,
       "registryDependencies": ["button"],
       "files": [
         {
@@ -20,24 +21,24 @@
           "type": "registry:hook"
         },
         {
-          "path": "registry/new-york/providers/polkadot-provider.tsx",
+          "path": "registry/new-york/polkadot-ui/providers/polkadot-provider.tsx",
           "type": "registry:file",
-          "target": "providers/polkadot-provider.tsx"
+          "target": "/polkadot-ui/providers/polkadot-provider.tsx"
         },
         {
-          "path": "registry/new-york/.papi/polkadot-api.json",
+          "path": "registry/new-york/polkadot-ui/config.ts",
           "type": "registry:file",
-          "target": ".papi/polkadot-api.json"
+          "target": "/polkadot-ui/config.ts"
         },
         {
-          "path": "registry/new-york/.papi/metadata/paseo_asset_hub.scale",
+          "path": "registry/new-york/polkadot-ui/lib/utils.ts",
           "type": "registry:file",
-          "target": ".papi/metadata/paseo_asset_hub.scale"
+          "target": "/polkadot-ui/lib/utils.ts"
         },
         {
-          "path": "registry/new-york/POLKADOT_SETUP.md",
+          "path": "registry/new-york/polkadot-ui/lib/types.ts",
           "type": "registry:file",
-          "target": "POLKADOT_SETUP.md"
+          "target": "/polkadot-ui/lib/types.ts"
         }
       ]
     },
