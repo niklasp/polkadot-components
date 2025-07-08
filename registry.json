@@ -21,14 +21,24 @@
           "type": "registry:hook"
         },
         {
-          "path": "registry/new-york/providers/polkadot-provider.tsx",
+          "path": "registry/new-york/polkadot-ui/providers/polkadot-provider.tsx",
           "type": "registry:file",
-          "target": "providers/polkadot-provider.tsx"
+          "target": "/polkadot-ui/providers/polkadot-provider.tsx"
         },
         {
-          "path": "registry/new-york/polkadot-config.ts",
+          "path": "registry/new-york/polkadot-ui/config.ts",
           "type": "registry:file",
-          "target": "polkadot-config.ts"
+          "target": "/polkadot-ui/config.ts"
+        },
+        {
+          "path": "registry/new-york/polkadot-ui/lib/utils.ts",
+          "type": "registry:file",
+          "target": "/polkadot-ui/lib/utils.ts"
+        },
+        {
+          "path": "registry/new-york/polkadot-ui/lib/types.ts",
+          "type": "registry:file",
+          "target": "/polkadot-ui/lib/types.ts"
         }
       ]
     },

@@ -1,7 +1,7 @@
 "use client";
 
 import { useBlockNumber } from "../hooks/use-block-number";
-import { usePolkadot } from "@/registry/new-york/providers/polkadot-provider";
+import { usePolkadot } from "@/registry/new-york/polkadot-ui/providers/polkadot-provider";
 import { Button } from "@/components/ui/button";
 
 export function BlockNumber() {

@@ -1,5 +1,5 @@
 "use client";
-import { usePolkadot } from "@/registry/new-york/providers/polkadot-provider";
+import { usePolkadot } from "@/registry/new-york/polkadot-ui/providers/polkadot-provider";
 import { useEffect, useState } from "react";
 
 export function useBlockNumber() {

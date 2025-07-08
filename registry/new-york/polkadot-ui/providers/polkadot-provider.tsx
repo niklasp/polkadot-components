@@ -4,14 +4,8 @@ import { createClient, TypedApi } from "polkadot-api";
 import { getWsProvider } from "polkadot-api/ws-provider/web";
 import { withPolkadotSdkCompat } from "polkadot-api/polkadot-sdk-compat";
 import { createContext, useContext, useEffect, useState } from "react";
-import {
-  polkadotConfig,
-  getChainIds,
-  getChainConfig,
-  isValidChainId,
-  type ChainId,
-  type ChainDescriptor,
-} from "@/registry/new-york/polkadot-config";
+import { polkadotConfig, type ChainId, type ChainDescriptor } from "../config";
+import { getChainIds, getChainConfig, isValidChainId } from "../lib/utils";
 
 // Type for the API based on configured chains
 type ConfiguredChainApi<T extends ChainId> = TypedApi<ChainDescriptor<T>>;
@@ -86,7 +80,7 @@ export function PolkadotProvider({
     setErrorStates((prev) => new Map(prev).set(chainId, null));
 
     try {
-      const chainConfig = getChainConfig(chainId);
+      const chainConfig = getChainConfig(polkadotConfig.chains, chainId);
 
       console.log(
         `Connecting to ${chainConfig.displayName} at ${chainConfig.endpoint}`
@@ -122,7 +116,7 @@ export function PolkadotProvider({
   };
 
   const setApi = (chainId: ChainId) => {
-    if (!isValidChainId(chainId)) {
+    if (!isValidChainId(polkadotConfig.chains, chainId)) {
       console.error(`Invalid chain ID: ${chainId}`);
       return;
     }
@@ -150,7 +144,10 @@ export function PolkadotProvider({
     return !!apis[chainId];
   };
 
-  const currentChainConfig = getChainConfig(currentChain);
+  const currentChainConfig = getChainConfig(
+    polkadotConfig.chains,
+    currentChain
+  );
 
   const value: PolkadotContextValue = {
     currentChain,
@@ -162,7 +159,7 @@ export function PolkadotProvider({
     disconnect,
     isConnected,
     chainName: currentChainConfig.displayName,
-    availableChains: getChainIds(),
+    availableChains: getChainIds(polkadotConfig.chains),
   };
 
   return (
