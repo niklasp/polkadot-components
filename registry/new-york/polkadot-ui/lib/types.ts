@@ -4,7 +4,6 @@ export interface ChainConfig {
   readonly descriptor: ChainDefinition;
   readonly endpoint: string;
   readonly displayName: string;
-  readonly isTestnet: boolean;
 }
 
 export interface PolkadotConfig<
@@ -14,7 +13,6 @@ export interface PolkadotConfig<
 > {
   readonly chains: TChains;
   readonly defaultChain: keyof TChains;
-  readonly devChain: keyof TChains;
 }
 
 export function definePolkadotConfig<

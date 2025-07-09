@@ -12,7 +12,28 @@ const program = new Command();
 // Registry URL based on environment
 let REGISTRY_URL = "https://polkadot-ui-registry.vercel.app";
 
-// Check if project uses Tailwind v4
+// Utility functions for consistent output formatting
+function info(message) {
+  console.log(`${chalk.blue("ℹ")} ${chalk.white(message)}`);
+}
+
+function detail(message) {
+  console.log(`${chalk.gray("i")} ${chalk.gray(message)}`);
+}
+
+function success(message) {
+  console.log(`${chalk.green("✔")} ${chalk.white(message)}`);
+}
+
+function error(message) {
+  console.log(`${chalk.red("✗")} ${chalk.white(message)}`);
+}
+
+function finalSuccess(message) {
+  console.log(`${chalk.green("✔")} ${chalk.white(message)}`);
+}
+
+// Check if project uses Tailwind
 async function getTailwindVersion() {
   const packageJson = JSON.parse(await fs.readFile("package.json", "utf-8"));
   const tailwindVersion =
@@ -336,25 +357,21 @@ async function installMissingChains(chains) {
 }
 
 // Setup polkadot-api with proper chain detection
-async function setupPolkadotApi(componentInfo, structure, isDev = false) {
-  console.log(chalk.cyan("Setting up Polkadot API..."));
+async function setupPolkadotApi(componentInfo, structure) {
+  console.log(chalk.white("Setting up Polkadot API..."));
 
   // First, check what chains are referenced in existing config
   const configChains = await parseConfigChains();
   const existingPapiChains = await checkExistingPapiConfig();
 
   // Determine what chains we need
-  const defaultChains = isDev ? ["paseo_asset_hub", "paseo"] : ["polkadot"];
+  const defaultChains = ["paseo_asset_hub", "paseo"];
   const requiredChains = [...new Set([...configChains, ...defaultChains])]; // Remove duplicates
 
-  console.log(chalk.cyan(`Required chains: ${requiredChains.join(", ")}`));
+  detail(`Required chains: ${requiredChains.join(", ")}`);
 
   if (existingPapiChains && existingPapiChains.length > 0) {
-    console.log(
-      chalk.green(
-        `✔ Found existing Polkadot chains: ${existingPapiChains.join(", ")}`
-      )
-    );
+    success(`Found existing Polkadot chains: ${existingPapiChains.join(", ")}`);
 
     // Check if we need to add any missing chains
     const missingChains = requiredChains.filter(
@@ -362,24 +379,22 @@ async function setupPolkadotApi(componentInfo, structure, isDev = false) {
     );
 
     if (missingChains.length > 0) {
-      console.log(
-        chalk.cyan(`Adding missing chains: ${missingChains.join(", ")}`)
-      );
+      detail(`Installing chains: ${missingChains.join(", ")}`);
       await installMissingChains(missingChains);
     } else {
-      console.log(chalk.green("✔ All required chains are already installed"));
+      success("All required chains are already installed");
     }
 
     return true;
   }
 
   // No existing setup, install all required chains
-  console.log(chalk.cyan(`Installing chains: ${requiredChains.join(", ")}`));
+  detail(`Installing chains: ${requiredChains.join(", ")}`);
   await installMissingChains(requiredChains);
 }
 
-async function installComponent(componentName, isDev = false) {
-  console.log(chalk.cyan(`Installing ${componentName} component...`));
+async function installComponent(componentName) {
+  info(`Installing ${componentName} component...`);
 
   try {
     // Validate project structure
@@ -390,10 +405,9 @@ async function installComponent(componentName, isDev = false) {
 
     // Determine shadcn command based on Tailwind version
     const tailwindVersion = await getTailwindVersion();
-    const shadcnCmd = tailwindVersion === 4 ? "shadcn@canary" : "shadcn@latest";
+    const shadcnCmd = "shadcn@latest";
 
-    console.log(chalk.cyan(`Detected Tailwind CSS v${tailwindVersion}`));
-    console.log(chalk.cyan(`Using ${shadcnCmd} for compatibility`));
+    detail(`Detected Tailwind CSS v${tailwindVersion}`);
 
     // Install component with shadcn
     const spinner = ora("Installing component with shadcn...").start();
@@ -403,59 +417,57 @@ async function installComponent(componentName, isDev = false) {
       await execa("npx", [shadcnCmd, "add", componentUrl], {
         stdio: "inherit", // Show shadcn prompts for user interaction
       });
-      console.log(chalk.green("✓ Component installed successfully"));
+      success("Component installed successfully");
     } catch (error) {
-      console.log(chalk.red("✗ Failed to install component with shadcn"));
+      error("Failed to install component with shadcn");
       throw error;
     }
 
     // Check if this is a Polkadot component
     const needsSetup = await needsPolkadotSetup(componentName);
     if (needsSetup) {
-      await setupPolkadotApi(null, structure, isDev);
+      await setupPolkadotApi(null, structure);
     }
 
-    console.log(
-      chalk.green(
-        `✅ ${componentName} component installed successfully${
-          needsSetup ? " with Polkadot API setup" : ""
-        }!`
-      )
+    finalSuccess(
+      `${componentName} component installed successfully${
+        needsSetup ? " with Polkadot API setup" : ""
+      }!`
     );
 
     if (needsSetup) {
-      console.log(chalk.cyan("\nNext steps:"));
-      console.log(chalk.gray("1. Wrap your app with the PolkadotProvider:"));
-      console.log(chalk.gray("   // In your app/layout.tsx or pages/_app.tsx"));
+      console.log(chalk.white("\nNext steps:"));
+      console.log(chalk.white("1. Wrap your app with the PolkadotProvider:"));
       console.log(
-        chalk.gray(
+        chalk.white("   // In your app/layout.tsx or pages/_app.tsx")
+      );
+      console.log(
+        chalk.white(
           "   import { PolkadotProvider } from '@/providers/polkadot-provider';"
         )
       );
       console.log(
-        chalk.gray("   <PolkadotProvider>{children}</PolkadotProvider>")
+        chalk.white("   <PolkadotProvider>{children}</PolkadotProvider>")
       );
-      console.log(chalk.gray(""));
-      console.log(chalk.gray("2. Import and use the component in your pages:"));
+      console.log(chalk.white(""));
       console.log(
-        chalk.gray(
+        chalk.white("2. Import and use the component in your pages:")
+      );
+      console.log(
+        chalk.white(
           `   import { ${componentName
             .split("-")
             .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
             .join("")} } from '@/components/${componentName}';`
         )
       );
-      console.log(chalk.gray(""));
-      console.log(
-        chalk.gray(
-          "3. The component will automatically connect to the blockchain!"
-        )
-      );
     } else {
-      console.log(chalk.cyan("\nNext steps:"));
-      console.log(chalk.gray("1. Import and use the component in your pages:"));
+      console.log(chalk.white("\nNext steps:"));
       console.log(
-        chalk.gray(
+        chalk.white("1. Import and use the component in your pages:")
+      );
+      console.log(
+        chalk.white(
           `   import { ${componentName
             .split("-")
             .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
@@ -564,7 +576,7 @@ program
   .action((options) => {
     if (options.dev) {
       REGISTRY_URL = "http://localhost:3000";
-      console.log(chalk.cyan("Using development registry at localhost:3000"));
+      info("Using development registry at localhost:3000");
     }
     listComponents();
   });
@@ -577,9 +589,9 @@ program
   .action((component, options) => {
     if (options.dev) {
       REGISTRY_URL = "http://localhost:3000";
-      console.log(chalk.cyan("Using development registry at localhost:3000"));
+      info("Using development registry at localhost:3000");
     }
-    installComponent(component, options.dev);
+    installComponent(component);
   });
 
 program.parse();

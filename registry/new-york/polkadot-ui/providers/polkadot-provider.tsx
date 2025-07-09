@@ -43,15 +43,11 @@ const PolkadotContext = createContext<PolkadotContextValue | undefined>(
 
 interface PolkadotProviderProps {
   children: React.ReactNode;
-  isDev?: boolean;
 }
 
-export function PolkadotProvider({
-  children,
-  isDev = false,
-}: PolkadotProviderProps) {
+export function PolkadotProvider({ children }: PolkadotProviderProps) {
   const [currentChain, setCurrentChain] = useState<ChainId>(
-    isDev ? polkadotConfig.devChain : polkadotConfig.defaultChain
+    polkadotConfig.defaultChain
   );
   const [apis, setApis] = useState<Partial<CompositeApi>>({});
   const [clients, setClients] = useState<
@@ -66,11 +62,8 @@ export function PolkadotProvider({
 
   // Initialize the default chain on mount
   useEffect(() => {
-    const defaultChain = isDev
-      ? polkadotConfig.devChain
-      : polkadotConfig.defaultChain;
-    initializeChain(defaultChain);
-  }, [isDev]);
+    initializeChain(polkadotConfig.defaultChain);
+  }, []);
 
   const initializeChain = async (chainId: ChainId) => {
     // Don't initialize if already connected
@@ -134,10 +127,7 @@ export function PolkadotProvider({
     setApis({});
     setLoadingStates(new Map());
     setErrorStates(new Map());
-    const defaultChain = isDev
-      ? polkadotConfig.devChain
-      : polkadotConfig.defaultChain;
-    setCurrentChain(defaultChain);
+    setCurrentChain(polkadotConfig.defaultChain);
   };
 
   const isConnected = (chainId: ChainId): boolean => {

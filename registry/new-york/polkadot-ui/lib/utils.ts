@@ -20,26 +20,3 @@ export function isValidChainId<T extends Record<string, ChainConfig>>(
 ): chainId is string & keyof T {
   return chainId in chains;
 }
-
-export function isTestnetChain<T extends Record<string, ChainConfig>>(
-  chains: T,
-  chainId: keyof T
-): boolean {
-  return getChainConfig(chains, chainId).isTestnet;
-}
-
-export function getTestnetChains<T extends Record<string, ChainConfig>>(
-  chains: T
-): (keyof T)[] {
-  return getChainIds(chains).filter((chainId) =>
-    isTestnetChain(chains, chainId)
-  );
-}
-
-export function getMainnetChains<T extends Record<string, ChainConfig>>(
-  chains: T
-): (keyof T)[] {
-  return getChainIds(chains).filter(
-    (chainId) => !isTestnetChain(chains, chainId)
-  );
-}

@@ -18,7 +18,7 @@ export default function Home() {
         <div className="grid gap-6 md:grid-cols-2">
           <div className="space-y-4">
             <h2 className="text-2xl font-semibold">Live Demo</h2>
-            <PolkadotProvider isDev={true}>
+            <PolkadotProvider>
               <BlockNumber />
             </PolkadotProvider>
           </div>
