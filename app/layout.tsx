@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { PolkadotProvider } from "@/registry/new-york/polkadot-ui/providers/polkadot-provider";
+import { PolkadotProvider } from "@/registry/polkadot-ui/providers/polkadot-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

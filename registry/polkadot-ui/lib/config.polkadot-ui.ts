@@ -1,7 +1,7 @@
 // To add more chains, run: npx papi add <chain-name> -n <chain-name>
 // Then import the descriptor here and add it to the chains configuration
 import { paseo_asset_hub, paseo } from "@polkadot-api/descriptors";
-import { definePolkadotConfig } from "@/registry/new-york/polkadot-ui/lib/types";
+import { definePolkadotConfig } from "@/registry/polkadot-ui/lib/types.polkadot-ui";
 
 export const polkadotConfig = definePolkadotConfig({
   chains: {

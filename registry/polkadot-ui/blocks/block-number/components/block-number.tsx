@@ -1,15 +1,21 @@
 "use client";
 
-import { useBlockNumber } from "../hooks/use-block-number";
-import { usePolkadot } from "@/registry/new-york/polkadot-ui/providers/polkadot-provider";
-import { Button } from "@/components/ui/button";
+import { useBlockNumber } from "@/registry/polkadot-ui/blocks/block-number/hooks/use-block-number";
+import { usePolkadot } from "@/registry/polkadot-ui/providers/polkadot-provider";
+import { Button } from "@/registry/polkadot-ui/ui/button";
 
 export function BlockNumber() {
-  const { blockNumber, isLoading, error, currentChain, chainName } =
-    useBlockNumber();
-  const { setApi, availableChains, isConnected } = usePolkadot();
+  const { blockNumber, error } = useBlockNumber();
+  const {
+    setApi,
+    availableChains,
+    isConnected,
+    isLoading: isLoading,
+    currentChain,
+    chainName,
+  } = usePolkadot();
 
-  if (isLoading) {
+  if (isLoading(currentChain)) {
     return (
       <div className="w-full max-w-md p-4 border border-gray-200 rounded-md bg-white">
         <div className="mb-4">
@@ -51,7 +57,7 @@ export function BlockNumber() {
 
         <div className="space-y-2">
           <div className="text-sm text-gray-600">
-            Current chain: <span className="font-mono">{currentChain}</span>
+            Current chain: <span className="font-mono">{chainName}</span>
           </div>
 
           <div className="flex gap-2 flex-wrap">
@@ -61,10 +67,10 @@ export function BlockNumber() {
                 variant={chainId === currentChain ? "default" : "outline"}
                 size="sm"
                 onClick={() => setApi(chainId)}
-                disabled={isLoading}
+                disabled={isLoading(chainId)}
               >
                 {chainId}
-                {isConnected(chainId) && chainId !== currentChain && (
+                {isConnected(chainId) && (
                   <span className="ml-1 text-xs text-green-600">●</span>
                 )}
               </Button>

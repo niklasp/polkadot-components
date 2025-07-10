@@ -3,19 +3,6 @@
 A CLI tool for installing Polkadot UI components with automatic API setup.
 Supports Next.js, Vite, and Create React App projects.
 
-## Features
-
-- 🚀 **Multi-framework support**: Works with Next.js, Vite, and Create React App
-- 🔗 **Automatic Polkadot API setup**: Configures chains, generates types, and
-  adapts providers
-- 🎨 **Tailwind CSS v4 compatibility**: Automatically detects and uses
-  appropriate shadcn version
-- 🔄 **Smart chain selection**: Uses testnet (Paseo Asset Hub) for development,
-  mainnet for production
-- 📦 **Interactive installation**: Shows shadcn prompts while automating
-  Polkadot setup
-- 📝 **Detailed next steps**: Provides complete integration instructions
-
 ## Installation
 
 ### For Development (Local Testing)
@@ -27,9 +14,6 @@ cd registry-template-v4/cli
 
 # Link the package locally for testing
 npm link
-
-# Or run directly without linking
-node bin/polkadot-ui.js --help
 ```
 
 ### For Production
@@ -92,78 +76,10 @@ cd test-polkadot-cli
 
 # Fix pnpm store if needed
 pnpm install
+
+# Add a componet from the library
+polkadot-ui add block-number
 ```
-
-### Test the CLI
-
-```bash
-# Test listing components
-polkadot-ui list --dev
-
-# Test installing a Polkadot component
-polkadot-ui add block-number --dev
-
-# The CLI should:
-# 1. Show interactive shadcn prompts (color selection, etc.)
-# 2. Install the component and dependencies
-# 3. Set up Polkadot API with Paseo Asset Hub
-# 4. Show detailed next steps instructions
-```
-
-### Expected Output
-
-```
-Using development registry at localhost:3000
-Installing block-number component...
-✔ Project structure validated
-Detected Tailwind CSS v4
-Using shadcn@canary for compatibility
-✔ You need to create a components.json file to add components. Proceed? … yes
-✔ Which color would you like to use as the base color? › Neutral
-✔ Writing components.json.
-✔ Created 4 files:
-  - components/block-number.tsx
-  - hooks/use-block-number.ts
-  - providers/polkadot-provider.tsx
-  - components/ui/button.tsx
-
-✓ Component installed successfully
-Setting up Polkadot API...
-✔ Paseo Asset Hub chain metadata and types generated
-Adapting provider to use Paseo Asset Hub...
-✔ Provider adapted to prefer "paseo_asset_hub" chain
-✅ block-number component installed successfully with Polkadot API setup!
-
-Next steps:
-1. Wrap your app with the PolkadotProvider:
-   // In your app/layout.tsx or pages/_app.tsx
-   import { PolkadotProvider } from '@/providers/polkadot-provider';
-   // Wrap your app:
-   <PolkadotProvider>{children}</PolkadotProvider>
-
-2. Import and use the component in your pages:
-   import { BlockNumber } from '@/components/block-number';
-
-3. The component will automatically connect to the blockchain!
-```
-
-## Development vs Production
-
-| Feature            | Development (`--dev`)       | Production (default)                      |
-| ------------------ | --------------------------- | ----------------------------------------- |
-| Registry URL       | `http://localhost:3000`     | `https://polkadot-ui-registry.vercel.app` |
-| Default Chain      | Paseo Asset Hub (testnet)   | Polkadot (mainnet)                        |
-| Package Manager    | pnpm                        | pnpm                                      |
-| Setup Requirements | Registry dev server running | Published registry                        |
-
-## Project Support
-
-The CLI automatically detects your project type and adapts:
-
-- **Next.js**: Components in `components/`, hooks in `hooks/`, providers in
-  `providers/`
-- **Vite/CRA**: Components in `src/components/`, hooks in `src/hooks/`,
-  providers in `src/providers/`
 
 ## What the CLI Does
 

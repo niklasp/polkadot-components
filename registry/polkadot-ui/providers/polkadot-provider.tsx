@@ -4,8 +4,16 @@ import { createClient, TypedApi } from "polkadot-api";
 import { getWsProvider } from "polkadot-api/ws-provider/web";
 import { withPolkadotSdkCompat } from "polkadot-api/polkadot-sdk-compat";
 import { createContext, useContext, useEffect, useState } from "react";
-import { polkadotConfig, type ChainId, type ChainDescriptor } from "../config";
-import { getChainIds, getChainConfig, isValidChainId } from "../lib/utils";
+import {
+  polkadotConfig,
+  type ChainId,
+  type ChainDescriptor,
+} from "@/registry/polkadot-ui/lib/config.polkadot-ui";
+import {
+  getChainIds,
+  getChainConfig,
+  isValidChainId,
+} from "@/registry/polkadot-ui/lib/utils.polkadot-ui";
 
 // Type for the API based on configured chains
 type ConfiguredChainApi<T extends ChainId> = TypedApi<ChainDescriptor<T>>;
@@ -19,10 +27,10 @@ interface PolkadotContextValue {
   // Current active chain and its API
   currentChain: ChainId;
   api: ConfiguredChainApi<ChainId> | null;
-  isLoading: boolean;
+  isLoading: (chainId: ChainId) => boolean;
   error: string | null;
 
-  // All APIs for all registered chains
+  // All APIs for all registered chainsp
   apis: Partial<CompositeApi>;
 
   // Function to switch active chain (type-safe)
@@ -134,6 +142,10 @@ export function PolkadotProvider({ children }: PolkadotProviderProps) {
     return !!apis[chainId];
   };
 
+  const isLoading = (chainId: ChainId): boolean => {
+    return loadingStates.get(chainId) || false;
+  };
+
   const currentChainConfig = getChainConfig(
     polkadotConfig.chains,
     currentChain
@@ -142,12 +154,12 @@ export function PolkadotProvider({ children }: PolkadotProviderProps) {
   const value: PolkadotContextValue = {
     currentChain,
     api: apis[currentChain] || null,
-    isLoading: loadingStates.get(currentChain) || false,
     error: errorStates.get(currentChain) || null,
     apis,
     setApi,
     disconnect,
     isConnected,
+    isLoading,
     chainName: currentChainConfig.displayName,
     availableChains: getChainIds(polkadotConfig.chains),
   };

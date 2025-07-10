@@ -159,7 +159,7 @@ async function detectProjectStructure() {
       componentDir,
       hookDir: srcDir ? `${srcDir}/hooks` : "hooks",
       providerDir: srcDir ? `${srcDir}/providers` : "providers",
-      registryDir: "registry/new-york", // For registry template structure
+      registryDir: "registry/polkadot-ui", // For registry template structure
       hasTypeScript: !!(
         packageJson.devDependencies?.typescript ||
         packageJson.dependencies?.typescript
@@ -405,7 +405,7 @@ async function installComponent(componentName) {
 
     // Determine shadcn command based on Tailwind version
     const tailwindVersion = await getTailwindVersion();
-    const shadcnCmd = "shadcn@latest";
+    const shadcnCmd = "shadcn@canary";
 
     detail(`Detected Tailwind CSS v${tailwindVersion}`);
 

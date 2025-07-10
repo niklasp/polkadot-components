@@ -1,5 +1,5 @@
-import { BlockNumber } from "@/registry/new-york/blocks/block-number/components/block-number";
-import { PolkadotProvider } from "@/registry/new-york/polkadot-ui/providers/polkadot-provider";
+import { BlockNumber } from "@/registry/polkadot-ui/blocks/block-number/components/block-number";
+import { PolkadotProvider } from "@/registry/polkadot-ui/providers/polkadot-provider";
 
 export default function Home() {
   return (
